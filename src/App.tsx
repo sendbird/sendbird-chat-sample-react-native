@@ -1,27 +1,15 @@
-import React, {useEffect} from 'react';
-import {
-  DarkUIKitTheme,
-  DialogProvider,
-  LightUIKitTheme,
-  Text,
-  ToastProvider,
-  UIKitThemeProvider,
-  useUIKitTheme,
-} from '@sendbird/uikit-react-native-foundation';
-import {AppState, useColorScheme, View} from 'react-native';
+import React from 'react';
+import {DarkUIKitTheme, DialogProvider, LightUIKitTheme, ToastProvider, UIKitThemeProvider} from '@sendbird/uikit-react-native-foundation';
+import {LogBox, useColorScheme} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {
-  DarkTheme,
-  DefaultTheme,
-  NavigationContainer,
-} from '@react-navigation/native';
+import {DarkTheme, DefaultTheme, NavigationContainer} from '@react-navigation/native';
 import GroupChannelListScreen from './screens/GroupChannelListScreen';
 import {RootContextProvider, useRootContext} from './contexts/RootContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConnectScreen from './screens/ConnectScreen';
-import {useForceUpdate} from '@sendbird/uikit-utils';
-import {ConnectionHandler} from '@sendbird/chat';
+import GroupChannelScreen from './screens/GroupChannelScreen';
+import ConnectionStateView from './components/ConnectionStateView';
 
 const APP_ID = '9DA1B1F4-0BE6-4DA8-82C5-2E81DAB56F23';
 
@@ -31,11 +19,10 @@ const App = () => {
   return (
     <RootContextProvider appId={APP_ID} localCacheStorage={AsyncStorage}>
       <SafeAreaProvider>
-        <UIKitThemeProvider
-          theme={scheme === 'dark' ? DarkUIKitTheme : LightUIKitTheme}>
+        <UIKitThemeProvider theme={scheme === 'dark' ? DarkUIKitTheme : LightUIKitTheme}>
           <DialogProvider>
             <ToastProvider>
-              <ConnectionState />
+              <ConnectionStateView />
               <Navigations scheme={scheme} />
             </ToastProvider>
           </DialogProvider>
@@ -46,49 +33,6 @@ const App = () => {
 };
 
 const Stack = createNativeStackNavigator();
-
-const ConnectionState = () => {
-  const {sdk} = useRootContext();
-
-  const {colors} = useUIKitTheme();
-  const forceUpdate = useForceUpdate();
-
-  useEffect(() => {
-    const KEY = 'root';
-    const handler = new ConnectionHandler();
-    handler.onConnected = () => forceUpdate();
-    handler.onDisconnected = () => forceUpdate();
-    handler.onReconnectFailed = () => forceUpdate();
-    handler.onReconnectStarted = () => forceUpdate();
-    handler.onReconnectSucceeded = () => forceUpdate();
-    sdk.addConnectionHandler(KEY, handler);
-    return () => sdk.removeConnectionHandler(KEY);
-  }, [sdk]);
-
-  useEffect(() => {
-    const subscribe = AppState.addEventListener('change', state => {
-      if (sdk.currentUser) {
-        if (state === 'active') sdk.setForegroundState();
-        if (state === 'background') sdk.setBackgroundState();
-      }
-    });
-
-    return () => subscribe.remove();
-  }, [sdk]);
-
-  return (
-    <View
-      style={{
-        backgroundColor: colors.primary,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-      }}>
-      <Text caption3 color={colors.onBackgroundReverse01}>
-        {`Connection state: ${sdk.connectionState}`}
-      </Text>
-    </View>
-  );
-};
 const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
   const {user} = useRootContext();
 
@@ -108,15 +52,15 @@ const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
           <Stack.Screen name={'Connect'} component={ConnectScreen} />
         ) : (
           <Stack.Group>
-            <Stack.Screen
-              name={'GroupChannelList'}
-              component={GroupChannelListScreen}
-            />
+            <Stack.Screen name={'GroupChannelList'} component={GroupChannelListScreen} />
+            <Stack.Screen name={'GroupChannel'} component={GroupChannelScreen} />
           </Stack.Group>
         )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
+
+LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 
 export default App;
