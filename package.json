@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:prod": "yarn android --variant=release",
     "ios": "react-native run-ios",
+    "ios:prod": "yarn ios --configuration Release",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "adb:reverse": "adb start-server && adb reverse tcp:8081 tcp:8081",
+    "build:android": "cd android && ./gradlew assembleRelease && open app/build/outputs/apk/release"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.17.7",
