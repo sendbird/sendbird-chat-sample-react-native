@@ -44,9 +44,7 @@ export const RootContextProvider = ({
       setUser(null);
     }
 
-    if (logLevel) {
-      sdk.logLevel = logLevel;
-    }
+    if (logLevel) sdk.logLevel = logLevel;
   }, [appId, logLevel]);
 
   return (
@@ -58,10 +56,6 @@ export const RootContextProvider = ({
 
 export const useRootContext = () => {
   const context = useContext(RootContext);
-
-  if (!context) {
-    throw new Error('Not provided RootContext');
-  }
-
+  if (!context) throw new Error('Not provided RootContext');
   return context;
 };

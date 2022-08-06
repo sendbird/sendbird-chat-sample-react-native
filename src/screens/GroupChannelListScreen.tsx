@@ -22,7 +22,7 @@ const GroupChannelListScreen = () => {
     }),
   );
 
-  useAsyncEffect(async () => {
+  useAsyncEffect(() => {
     collection.setGroupChannelCollectionHandler({
       onChannelsAdded() {
         forceUpdate();
@@ -35,7 +35,7 @@ const GroupChannelListScreen = () => {
       },
     });
 
-    await collection.loadMore().then(forceUpdate);
+    collection.loadMore().then(forceUpdate);
     return () => collection.dispose();
   }, []);
 
@@ -61,9 +61,7 @@ const GroupChannelListScreen = () => {
         />
       )}
       onEndReached={async () => {
-        if (collection.hasMore) {
-          await collection.loadMore().then(forceUpdate);
-        }
+        if (collection.hasMore) collection.loadMore().then(forceUpdate);
       }}
     />
   );
