@@ -1,5 +1,5 @@
 import {useRootContext} from '../contexts/RootContext';
-import {ScrollView} from 'react-native';
+import {Platform, ScrollView} from 'react-native';
 import {Button, Text, TextInput, useUIKitTheme} from '@sendbird/uikit-react-native-foundation';
 import React, {useState} from 'react';
 
@@ -8,7 +8,7 @@ const ConnectScreen = () => {
   const {colors} = useUIKitTheme();
 
   const [state, setState] = useState({
-    id: '',
+    id: Platform.OS + '_RN',
     accessToken: '',
   });
 

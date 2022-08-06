@@ -1,8 +1,8 @@
-import {FlatList, Pressable} from 'react-native';
+import {FlatList, Pressable, TouchableOpacity} from 'react-native';
 import React, {useState} from 'react';
 import {getGroupChannelLastMessage, getGroupChannelTitle, useAsyncEffect, useForceUpdate} from '@sendbird/uikit-utils';
 import {useRootContext} from '../contexts/RootContext';
-import {GroupChannelPreview} from '@sendbird/uikit-react-native-foundation';
+import {GroupChannelPreview, Icon} from '@sendbird/uikit-react-native-foundation';
 import dayjs from 'dayjs';
 import {GroupChannelListOrder} from '@sendbird/chat/groupChannel';
 import {useNavigation} from '@react-navigation/native';
@@ -20,6 +20,16 @@ const GroupChannelListScreen = () => {
   });
 
   useAsyncEffect(() => {
+    navigation.setOptions({
+      headerRight: () => {
+        return (
+          <TouchableOpacity onPress={() => navigation.navigate('GroupChannelCreate')}>
+            <Icon icon={'create'} />
+          </TouchableOpacity>
+        );
+      },
+    });
+
     collection.setGroupChannelCollectionHandler({
       onChannelsAdded() {
         forceUpdate();

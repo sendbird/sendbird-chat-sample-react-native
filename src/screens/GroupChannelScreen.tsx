@@ -43,8 +43,6 @@ const GroupChannelScreen = () => {
   const [messages, setMessages] = useState<Record<string, SendableMessage>>({});
 
   const upsertMessages = (_messages: SendableMessage[]) => {
-    // configureNext();
-
     setMessages(({...draft}) => {
       _messages.forEach(message => {
         if (message.messageId) {
@@ -57,6 +55,7 @@ const GroupChannelScreen = () => {
 
       return draft;
     });
+    params.channel.markAsRead().then().catch();
   };
 
   const deleteMesssages = (_messageIds: number[]) => {

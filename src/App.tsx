@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConnectScreen from './screens/ConnectScreen';
 import GroupChannelScreen from './screens/GroupChannelScreen';
 import ConnectionStateView from './components/ConnectionStateView';
+import GroupChannelCreateScreen from './screens/GroupChannelCreateScreen';
 
 const APP_ID = '9DA1B1F4-0BE6-4DA8-82C5-2E81DAB56F23';
 
@@ -53,6 +54,7 @@ const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
         ) : (
           <Stack.Group>
             <Stack.Screen name={'GroupChannelList'} component={GroupChannelListScreen} />
+            <Stack.Screen name={'GroupChannelCreate'} component={GroupChannelCreateScreen} />
             <Stack.Screen name={'GroupChannel'} component={GroupChannelScreen} />
           </Stack.Group>
         )}
