@@ -21,6 +21,7 @@ const GroupChannelCreateScreen = () => {
         invitedUserIds: selectedUsers.map(u => u.userId),
         operatorUserIds: [sdk.currentUser.userId],
       });
+      // @ts-ignore
       navigation.replace('GroupChannel', {channel});
     }
   });

@@ -13,8 +13,12 @@ const ConnectScreen = () => {
   });
 
   const signIn = async () => {
-    const user = await sdk.connect(state.id);
-    setUser(user);
+    try {
+      const user = await sdk.connect(state.id);
+      setUser(user);
+    } catch (e) {
+      if (sdk.currentUser) setUser(sdk.currentUser);
+    }
   };
 
   return (

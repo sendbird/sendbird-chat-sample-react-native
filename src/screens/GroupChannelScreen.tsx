@@ -37,8 +37,13 @@ const GroupChannelScreen = () => {
   const forceUpdate = useForceUpdate();
   const [collection] = useState(() => {
     const channel = params.channel;
-    return channel.createMessageCollection();
+    return channel.createMessageCollection({
+      limit: 10,
+      startingPoint: Date.now(),
+    });
   });
+
+  console.log('render ->', collection.hasPrevious);
 
   const [messages, setMessages] = useState<Record<string, SendableMessage>>({});
 
@@ -55,7 +60,7 @@ const GroupChannelScreen = () => {
 
       return draft;
     });
-    params.channel.markAsRead().then().catch();
+    // params.channel.markAsRead().then().catch();
   };
 
   const deleteMesssages = (_messageIds: number[]) => {
@@ -77,9 +82,11 @@ const GroupChannelScreen = () => {
       .initialize(MessageCollectionInitPolicy.CACHE_AND_REPLACE_BY_API)
       .onCacheResult((err, msgs) => {
         if (msgs.length) upsertMessages(msgs as SendableMessage[]);
+        console.log('onCacheResult ->', collection.hasPrevious);
       })
       .onApiResult((err, msgs) => {
         if (msgs.length) upsertMessages(msgs as SendableMessage[]);
+        console.log('onApiResult ->', collection.hasPrevious);
       });
 
     collection.setMessageCollectionHandler({
@@ -116,6 +123,7 @@ const GroupChannelScreen = () => {
         ItemSeparatorComponent={() => <View style={{height: 12}} />}
         keyExtractor={item => `${item.messageId || item.reqId}`}
         onEndReached={async () => {
+          console.log('onEndReached ->', collection.hasPrevious);
           if (collection.hasPrevious) {
             upsertMessages((await collection.loadPrevious()) as SendableMessage[]);
           }
@@ -170,7 +178,6 @@ const SendInput = ({channel}: {channel: GroupChannel}) => {
               selectionLimit: 1,
               mediaType: 'mixed',
             });
-            console.log(file.errorMessage);
             if (file.didCancel) return;
 
             const asset = file.assets?.[0];
