@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sendbird-chat-sample-react-native
+  description: v4 Chat sample for React Native
+  annotations:
+    github.com/project-slug: sendbird/sendbird-chat-sample-react-native
+spec:
+  type: library
+  lifecycle: experimental
+  owner: dep-client-platform
+  system: sendbird-chat
