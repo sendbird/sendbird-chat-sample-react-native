@@ -12,6 +12,7 @@ const ConnectScreen = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [state, setState] = useState({
     id: 'ReactNative-' + Platform.OS,
+    nickname: 'ReactNative-' + Platform.OS,
     accessToken: '',
   });
 
@@ -20,6 +21,7 @@ const ConnectScreen = () => {
     try {
       setIsConnecting(true);
       const user = await sdk.connect(state.id);
+      await sdk.updateCurrentUserInfo({nickname: state.nickname});
       setUser(user);
     } catch (e) {
       if (sdk.isCacheEnabled && sdk.currentUser) {
@@ -45,6 +47,15 @@ const ConnectScreen = () => {
         placeholder={'Required'}
         value={state.id}
         onChangeText={id => setState(prev => ({...prev, id}))}
+        style={{marginBottom: 12}}
+      />
+      <Text caption3 color={colors.onBackground02}>
+        {'Nickname'}
+      </Text>
+      <TextInput
+        placeholder={'Optional'}
+        value={state.nickname}
+        onChangeText={nickname => setState(prev => ({...prev, nickname}))}
         style={{marginBottom: 12}}
       />
       <Text caption3 color={colors.onBackground02}>
