@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {DarkUIKitTheme, DialogProvider, LightUIKitTheme, ToastProvider, UIKitThemeProvider} from '@sendbird/uikit-react-native-foundation';
 import {useColorScheme} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -14,33 +14,21 @@ import GroupChannelCreateScreen from './screens/GroupChannelCreateScreen';
 import {navigationRef, Routes} from './libs/navigation';
 import {LogLevel} from '@sendbird/chat';
 import GroupChannelInviteScreen from './screens/GroupChannelInviteScreen';
+import {notificationHandler} from './libs/notifications';
 
 const Stack = createNativeStackNavigator();
 const APP_ID = '9DA1B1F4-0BE6-4DA8-82C5-2E81DAB56F23';
 
-const App = () => {
-  const scheme = useColorScheme();
-
-  return (
-    <RootContextProvider appId={APP_ID} localCacheStorage={AsyncStorage} logLevel={LogLevel.WARN}>
-      <SafeAreaProvider>
-        <UIKitThemeProvider theme={scheme === 'dark' ? DarkUIKitTheme : LightUIKitTheme}>
-          <DialogProvider>
-            <ToastProvider>
-              <ConnectionStateView />
-              <Navigations scheme={scheme} />
-            </ToastProvider>
-          </DialogProvider>
-        </UIKitThemeProvider>
-      </SafeAreaProvider>
-    </RootContextProvider>
-  );
-};
-
+notificationHandler.startOnBackground();
 const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
   const {user} = useRootContext();
-
   const theme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  useEffect(() => {
+    notificationHandler.startOnAppOpened();
+    const unsubscribe = notificationHandler.startOnForeground();
+    return () => unsubscribe();
+  }, []);
 
   return (
     <NavigationContainer
@@ -65,6 +53,25 @@ const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+  );
+};
+
+const App = () => {
+  const scheme = useColorScheme();
+
+  return (
+    <RootContextProvider appId={APP_ID} localCacheStorage={AsyncStorage} logLevel={LogLevel.WARN}>
+      <SafeAreaProvider>
+        <UIKitThemeProvider theme={scheme === 'dark' ? DarkUIKitTheme : LightUIKitTheme}>
+          <DialogProvider>
+            <ToastProvider>
+              <ConnectionStateView />
+              <Navigations scheme={scheme} />
+            </ToastProvider>
+          </DialogProvider>
+        </UIKitThemeProvider>
+      </SafeAreaProvider>
+    </RootContextProvider>
   );
 };
 
