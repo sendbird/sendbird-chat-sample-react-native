@@ -1,5 +1,6 @@
 #import "AppDelegate.h"
 #import <Firebase.h>
+#import <RNCPushNotificationIOS.h>
 
 #import <React/RCTBundleURLProvider.h>
 
@@ -12,6 +13,8 @@
   // You can add your custom initial props in the dictionary below.
   // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
+  
+  [UNUserNotificationCenter currentNotificationCenter].delegate = self;
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
@@ -25,4 +28,10 @@
 #endif
 }
 
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+didReceiveNotificationResponse:(UNNotificationResponse *)response
+         withCompletionHandler:(void (^)(void))completionHandler
+{
+  [RNCPushNotificationIOS didReceiveNotificationResponse:response];
+}
 @end
