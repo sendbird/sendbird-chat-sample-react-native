@@ -15,6 +15,7 @@ import {navigationRef, Routes} from './libs/navigation';
 import {LogLevel} from '@sendbird/chat';
 import GroupChannelInviteScreen from './screens/GroupChannelInviteScreen';
 
+const Stack = createNativeStackNavigator();
 const APP_ID = '9DA1B1F4-0BE6-4DA8-82C5-2E81DAB56F23';
 
 const App = () => {
@@ -36,7 +37,6 @@ const App = () => {
   );
 };
 
-const Stack = createNativeStackNavigator();
 const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
   const {user} = useRootContext();
 
