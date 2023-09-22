@@ -44,3 +44,27 @@ export function setNextLayoutAnimation() {
     duration: 250,
   });
 }
+
+export function runWithRetry(fn: () => boolean, opts?: {interval?: number; retry?: number}) {
+  const options = {
+    retry: opts?.retry ?? 8,
+    interval: opts?.interval ?? 500,
+  };
+  const context = {
+    tries: 0,
+    timer: undefined as undefined | NodeJS.Timeout,
+  };
+
+  context.timer = setInterval(() => {
+    if (context.tries > options.retry) {
+      clearInterval(context.timer);
+    }
+
+    const succeeded = fn();
+    if (succeeded) {
+      clearInterval(context.timer);
+    } else {
+      context.tries++;
+    }
+  }, options.interval);
+}

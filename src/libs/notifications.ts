@@ -6,6 +6,9 @@ import {Platform} from 'react-native';
 import {isSendbirdNotification, parseSendbirdNotification, SendbirdDataPayload} from '@sendbird/uikit-utils';
 
 import {navigationRef, Routes} from './navigation';
+import {rootContextRef} from '../contexts/RootContext';
+import {runWithRetry} from './utils';
+import {ConnectionState} from '@sendbird/chat';
 
 type Unsubscribe = () => void;
 type NotificationHandler = (payload: SendbirdDataPayload) => void;
@@ -158,8 +161,13 @@ export const notificationHandler = new NotificationOpenHandler({
   },
 });
 
-const navigateToChannel = (sendbird: SendbirdDataPayload) => {
-  if (navigationRef.isReady()) {
-    navigationRef.navigate(Routes.GroupChannel, {channelUrl: sendbird.channel.channel_url});
-  }
+const navigateToChannel = (payload: SendbirdDataPayload) => {
+  runWithRetry(() => {
+    if (navigationRef.isReady() && rootContextRef.isReady() && rootContextRef.current?.sdk.connectionState === ConnectionState.OPEN) {
+      navigationRef.navigate(Routes.GroupChannel, {channelUrl: payload.channel.channel_url});
+      return true;
+    }
+
+    return false;
+  });
 };

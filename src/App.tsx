@@ -15,6 +15,7 @@ import {navigationRef, Routes} from './libs/navigation';
 import {LogLevel} from '@sendbird/chat';
 import GroupChannelInviteScreen from './screens/GroupChannelInviteScreen';
 import {notificationHandler} from './libs/notifications';
+import {permissionHandler} from './libs/permissions';
 
 const Stack = createNativeStackNavigator();
 const APP_ID = '9DA1B1F4-0BE6-4DA8-82C5-2E81DAB56F23';
@@ -25,8 +26,17 @@ const Navigations = ({scheme}: {scheme?: 'light' | 'dark' | null}) => {
   const theme = scheme === 'dark' ? DarkTheme : DefaultTheme;
 
   useEffect(() => {
-    notificationHandler.startOnAppOpened();
-    const unsubscribe = notificationHandler.startOnForeground();
+    let unsubscribe = () => {
+      /* noop */
+    };
+
+    permissionHandler.requestPermissions().then(({notification}) => {
+      if (notification) {
+        notificationHandler.startOnAppOpened();
+        unsubscribe = notificationHandler.startOnForeground();
+      }
+    });
+
     return () => unsubscribe();
   }, []);
 
