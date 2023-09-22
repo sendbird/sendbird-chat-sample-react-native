@@ -72,6 +72,7 @@ class NotificationOpenHandler {
     if (Platform.OS === 'android') {
       unsubscribes.push(
         Notifee.onForegroundEvent(async ({type, detail}) => {
+          // @ts-ignore
           if (type === EventType.PRESS && detail.notification && isSendbirdNotification(detail.notification.data)) {
             const payload = parseSendbirdNotification(detail.notification.data);
             this.handlers.onForeground(payload);
@@ -104,6 +105,7 @@ class NotificationOpenHandler {
 
     if (Platform.OS === 'android') {
       Notifee.onBackgroundEvent(async ({type, detail}) => {
+        // @ts-ignore
         if (type === EventType.PRESS && detail.notification && isSendbirdNotification(detail.notification.data)) {
           const payload = parseSendbirdNotification(detail.notification.data);
           this.handlers.onBackground(payload);

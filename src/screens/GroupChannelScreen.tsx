@@ -1,68 +1,32 @@
-import {ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View} from 'react-native';
-import React, {useEffect, useLayoutEffect, useState} from 'react';
+import {ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useId, useLayoutEffect, useState} from 'react';
 import {useRootContext} from '../contexts/RootContext';
-import {GroupChannel, MessageCollection, MessageCollectionInitPolicy} from '@sendbird/chat/groupChannel';
+import {GroupChannel, GroupChannelHandler, MessageCollection, MessageCollectionInitPolicy} from '@sendbird/chat/groupChannel';
 import {BaseMessage} from '@sendbird/chat/message';
 import AdminMessageView from '../components/AdminMessageView';
 import FileMessageView from '../components/FileMessasgeView';
 import UserMessageView from '../components/UserMessageView';
-import {Icon, TextInput, useBottomSheet} from '@sendbird/uikit-react-native-foundation';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useHeaderHeight} from '@react-navigation/elements';
-import * as ImagePicker from 'react-native-image-picker';
-import {CONNECTION_STATE_HEIGHT} from '../components/ConnectionStateView';
+import {Icon} from '@sendbird/uikit-react-native-foundation';
 import {isSendableMessage} from '../libs/utils';
 import {Routes, useAppNavigation} from '../libs/navigation';
 import {CollectionEventSource} from '@sendbird/chat';
 import {logger} from '../libs/logger';
-
-const useHeaderRightButtons = (channel?: GroupChannel) => {
-  const {navigation} = useAppNavigation();
-
-  useLayoutEffect(() => {
-    if (channel) {
-      navigation.setOptions({
-        headerRight: () => {
-          return (
-            <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-              <TouchableOpacity onPress={() => navigation.navigate(Routes.GroupChannelInvite, {channelUrl: channel.url})}>
-                <Icon icon={'members'} size={20} />
-              </TouchableOpacity>
-              <View style={{width: 8}} />
-              <TouchableOpacity
-                onPress={() => {
-                  channel
-                    ?.leave()
-                    .then(() => {
-                      logger.log('leave channel, go back');
-                      navigation.goBack();
-                    })
-                    .catch(() => {
-                      logger.log('leave channel failure');
-                    });
-                }}>
-                <Icon icon={'leave'} size={20} />
-              </TouchableOpacity>
-            </View>
-          );
-        },
-      });
-    }
-  }, [channel]);
-};
+import SendInput, {INPUT_MAX_HEIGHT} from '../components/SendInput';
 
 const GroupChannelScreen = () => {
+  const handlerId = useId();
   const {sdk} = useRootContext();
   const {navigation, params} = useAppNavigation();
 
   const [state, setState] = useState<{channel: GroupChannel; collection: MessageCollection}>();
+
   const [messages, setMessages] = useState<{pending: BaseMessage[]; failed: BaseMessage[]; succeeded: BaseMessage[]}>({
     pending: [],
     failed: [],
     succeeded: [],
   });
 
-  useHeaderRightButtons(state?.channel);
+  useHeaderButtons(state?.channel);
 
   // pending -> failed
   const upsertFailedMessages = (failed: BaseMessage[]) => {
@@ -143,10 +107,10 @@ const GroupChannelScreen = () => {
   const deleteMessages = (messages: BaseMessage[]) => {
     setMessages(({...draft}) => {
       messages.forEach(message => {
-        draft.pending = draft.pending.filter(it => isSendableMessage(it) && isSendableMessage(message) && it.reqId === message.reqId);
-        draft.failed = draft.failed.filter(it => isSendableMessage(it) && isSendableMessage(message) && it.reqId === message.reqId);
+        draft.pending = draft.pending.filter(it => isSendableMessage(it) && isSendableMessage(message) && it.reqId !== message.reqId);
+        draft.failed = draft.failed.filter(it => isSendableMessage(it) && isSendableMessage(message) && it.reqId !== message.reqId);
         draft.succeeded = draft.succeeded.filter(
-          it => it.messageId !== message.messageId || (isSendableMessage(it) && isSendableMessage(message) && it.reqId === message.reqId),
+          it => it.messageId !== message.messageId || (isSendableMessage(it) && isSendableMessage(message) && it.reqId !== message.reqId),
         );
       });
       return draft;
@@ -159,13 +123,14 @@ const GroupChannelScreen = () => {
       const collection = channel.createMessageCollection();
 
       collection.setMessageCollectionHandler({
-        onChannelDeleted() {
+        onChannelDeleted: () => {
+          logger.info('channel deleted, go back');
           navigation.goBack();
         },
-        onChannelUpdated(_, channel) {
+        onChannelUpdated: (_, channel) => {
           setState(prev => (prev ? {...prev, channel} : prev));
         },
-        onMessagesUpdated(context, __, messages) {
+        onMessagesUpdated: (context, __, messages) => {
           if (context.source === CollectionEventSource.EVENT_MESSAGE_SENT_PENDING) {
             upsertPendingMessages(messages);
           } else if (context.source === CollectionEventSource.EVENT_MESSAGE_SENT_FAILED) {
@@ -174,7 +139,7 @@ const GroupChannelScreen = () => {
             updateSucceededMessages(messages);
           }
         },
-        onMessagesAdded(context, __, messages) {
+        onMessagesAdded: (context, __, messages) => {
           if (context.source === CollectionEventSource.EVENT_MESSAGE_SENT_PENDING) {
             upsertPendingMessages(messages);
           } else {
@@ -185,10 +150,10 @@ const GroupChannelScreen = () => {
             }
           }
         },
-        onMessagesDeleted(_, __, ___, messages) {
+        onMessagesDeleted: (_, __, ___, messages) => {
           deleteMessages(messages);
         },
-        onHugeGapDetected() {
+        onHugeGapDetected: () => {
           // reset
           setMessages({pending: [], failed: [], succeeded: []});
           initializeCollection(channelUrl);
@@ -198,24 +163,28 @@ const GroupChannelScreen = () => {
         .initialize(MessageCollectionInitPolicy.CACHE_AND_REPLACE_BY_API)
         .onCacheResult((err, messages) => {
           if (messages?.length && messages.length > 0) {
+            logger.log('GroupChannelScreen:', 'onCacheResult', messages.length);
             addSucceededMessages(messages, 'prev');
           }
+          setState({channel, collection});
         })
         .onApiResult((err, messages) => {
           if (messages?.length && messages.length > 0) {
+            logger.log('GroupChannelScreen:', 'onApiResult', messages.length);
             addSucceededMessages(messages, 'prev');
           }
+          setState({channel, collection});
         });
 
       upsertPendingMessages(collection.pendingMessages);
       upsertFailedMessages(collection.failedMessages);
-      setState({channel, collection});
       channel.markAsRead();
     } catch {
       navigation.goBack();
     }
   };
 
+  // Handle initialize collection
   useEffect(() => {
     if (params?.channelUrl) {
       initializeCollection(params.channelUrl);
@@ -224,133 +193,136 @@ const GroupChannelScreen = () => {
     }
   }, [params?.channelUrl]);
 
+  // Handle dispose
   useEffect(() => {
     return () => {
-      if (state?.collection) {
-        state.collection.dispose();
-      }
+      state?.collection.dispose();
     };
   }, [state?.collection]);
 
-  if (!state) {
-    return <ActivityIndicator style={StyleSheet.absoluteFill} size={'large'} />;
-  }
+  // Handle banned and left
+  useEffect(() => {
+    const handler = new GroupChannelHandler({
+      onUserBanned: (eventChannel, user) => {
+        if (eventChannel.url === state?.channel.url && user.userId === sdk.currentUser?.userId) {
+          logger.info('banned, go back');
+          navigation.goBack();
+        }
+      },
+      onUserLeft: (eventChannel, user) => {
+        if (eventChannel.url === state?.channel.url && user.userId === sdk.currentUser?.userId) {
+          logger.info('leave channel from another device, go back');
+          navigation.goBack();
+        }
+      },
+    });
+
+    sdk.groupChannel.addGroupChannelHandler(handlerId, handler);
+    return () => {
+      sdk.groupChannel.removeGroupChannelHandler(handlerId);
+    };
+  }, []);
+
+  // Render ActivityIndicator while loading collection
+  if (!state) return <ActivityIndicator style={StyleSheet.absoluteFill} size={'large'} />;
+
+  const keyExtractor = (item: BaseMessage) => (isSendableMessage(item) ? item.reqId : String(item.messageId));
+  const onStartReached = async () => {
+    if (state.collection.hasNext) {
+      const nextMessages = await state.collection.loadNext();
+      logger.info('onStartReached', nextMessages.length);
+      addSucceededMessages(nextMessages, 'next');
+    }
+  };
+  const onEndReached = async () => {
+    if (state.collection.hasPrevious) {
+      const prevMessages = await state.collection.loadPrevious();
+      logger.info('onEndReached', prevMessages.length);
+      addSucceededMessages(prevMessages, 'prev');
+    }
+  };
+  const renderItem = ({item}: {item: BaseMessage}) => (
+    <View style={styles.item}>
+      {item.isAdminMessage() && <AdminMessageView channel={state.channel} message={item} />}
+      {item.isFileMessage() && <FileMessageView channel={state.channel} message={item} />}
+      {item.isUserMessage() && <UserMessageView channel={state.channel} message={item} />}
+    </View>
+  );
 
   return (
     <>
       <FlatList
         inverted
         data={[...messages.failed, ...messages.pending, ...messages.succeeded]}
-        contentContainerStyle={{padding: 12}}
-        ItemSeparatorComponent={() => <View style={{height: 12}} />}
-        keyExtractor={item => (isSendableMessage(item) ? item.reqId : String(item.messageId))}
-        onStartReached={async () => {
-          if (state?.collection.hasNext) {
-            const nextMessages = await state?.collection.loadNext();
-            addSucceededMessages(nextMessages, 'next');
-          }
+        contentContainerStyle={styles.container}
+        ItemSeparatorComponent={ItemSeparator}
+        keyExtractor={keyExtractor}
+        onStartReached={onStartReached}
+        onEndReached={onEndReached}
+        renderItem={renderItem}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 1,
+          autoscrollToTopThreshold: Platform.select({android: 20 + INPUT_MAX_HEIGHT, default: 20}),
         }}
-        onEndReached={async () => {
-          if (state?.collection.hasPrevious) {
-            const prevMessages = await state?.collection.loadPrevious();
-            addSucceededMessages(prevMessages, 'prev');
-          }
-        }}
-        renderItem={({item}) => (
-          <View style={{flex: 1}}>
-            {item.isAdminMessage() && <AdminMessageView channel={state.channel} message={item} />}
-            {item.isFileMessage() && <FileMessageView channel={state.channel} message={item} />}
-            {item.isUserMessage() && <UserMessageView channel={state.channel} message={item} />}
-          </View>
-        )}
       />
-      <SendInput channel={state?.channel} />
+      <SendInput channel={state.channel} />
     </>
   );
 };
 
-const SendInput = ({channel}: {channel: GroupChannel}) => {
-  const height = useHeaderHeight();
-  const {bottom} = useSafeAreaInsets();
-  const {openSheet} = useBottomSheet();
+const ItemSeparator = () => <View style={styles.separator} />;
+const useHeaderButtons = (channel?: GroupChannel) => {
+  const {navigation} = useAppNavigation();
 
-  const [text, setText] = useState('');
+  useLayoutEffect(() => {
+    if (channel) {
+      const onPressInvite = () => navigation.navigate(Routes.GroupChannelInvite, {channelUrl: channel.url});
+      const onPressLeave = async () => {
+        try {
+          await channel.leave();
+          logger.info('leave channel, go back');
+          navigation.goBack();
+        } catch {
+          logger.info('leave channel failure');
+        }
+      };
 
-  const openAttachmentsSheet = async () => {
-    openSheet({
-      sheetItems: [
-        {
-          title: 'Open camera',
-          icon: 'camera',
-          onPress: async () => {
-            const result = await ImagePicker.launchCamera({mediaType: 'mixed'});
-            if (result.didCancel || result.errorCode === 'camera_unavailable') return;
-
-            const asset = result.assets?.[0];
-            if (asset) {
-              const fileObject = {uri: asset.uri, name: asset.fileName, type: asset.type};
-              channel.sendFileMessage({file: fileObject});
-            }
-          },
+      navigation.setOptions({
+        headerRight: () => {
+          return (
+            <View style={styles.headerButtonContainer}>
+              <TouchableOpacity onPress={onPressInvite}>
+                <Icon icon={'members'} size={20} />
+              </TouchableOpacity>
+              <View style={styles.headerButtonSeparator} />
+              <TouchableOpacity onPress={onPressLeave}>
+                <Icon icon={'leave'} size={20} />
+              </TouchableOpacity>
+            </View>
+          );
         },
-        {
-          title: 'Open gallery',
-          icon: 'photo',
-          onPress: async () => {
-            const result = await ImagePicker.launchImageLibrary({selectionLimit: 1, mediaType: 'mixed'});
-            if (result.didCancel) return;
-
-            const asset = result.assets?.[0];
-            if (asset) {
-              const fileObject = {uri: asset.uri, name: asset.fileName, type: asset.type};
-              channel.sendFileMessage({file: fileObject});
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  return (
-    <KeyboardAvoidingView
-      keyboardVerticalOffset={-bottom + height + CONNECTION_STATE_HEIGHT}
-      behavior={Platform.select({
-        ios: 'padding' as const,
-        default: undefined,
-      })}>
-      <View style={styles.inputContainer}>
-        <TouchableOpacity onPress={openAttachmentsSheet} style={{marginRight: 8}}>
-          <Icon icon={'add'} size={20} />
-        </TouchableOpacity>
-        <TextInput multiline placeholder={'Enter message'} value={text} onChangeText={value => setText(() => value)} style={styles.input} />
-        {text.length > 0 && (
-          <TouchableOpacity
-            style={{marginLeft: 8}}
-            onPress={() => {
-              setText(() => '');
-              channel.sendUserMessage({message: text});
-            }}>
-            <Icon icon={'send'} size={20} />
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={{height: bottom}} />
-    </KeyboardAvoidingView>
-  );
+      });
+    }
+  }, [channel]);
 };
 
 const styles = StyleSheet.create({
-  inputContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  container: {
+    padding: 12,
+  },
+  separator: {
+    height: 12,
+  },
+  item: {
+    flex: 1,
+  },
+  headerButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  input: {
-    flex: 1,
-    maxHeight: 80,
-    borderRadius: 4,
+  headerButtonSeparator: {
+    width: 8,
   },
 });
 

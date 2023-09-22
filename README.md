@@ -5,7 +5,7 @@ Sendbird React Native sample using [Sendbird SDK](https://github.com/sendbird/se
 ## Prerequisite
 
 - [Node](https://nodejs.org/en/)
-- [NPM](https://www.npmjs.com/)
+- [Yarn](https://yarnpkg.com//) or [NPM](https://www.npmjs.com/)
 - [Cocoapods](https://cocoapods.org/)
 - [XCode](https://developer.apple.com/xcode)
 - [XCode Command Line Tools](https://reactnative.dev/docs/environment-setup#xcode)
@@ -51,8 +51,8 @@ yarn ios
 
 1. General
     - After each of these you might want to rebuild the project and run*
-    - You can run `npm run clear` from root directory, this might help to solve some issues and clean old builds
-    - Sometimes it is advised to delete package-lock.json, but we do not recommend it for compatibility issues, do it at your own risk
+    - You can run `yarn clean` from root directory, this might help to solve some issues and clean old builds
+    - Sometimes it is advised to delete yarn.lock, but we do not recommend it for compatibility issues, do it at your own risk
     - Make sure you have prerequisite software installed before your run this app, they can be found here: https://reactnative.dev/docs/environment-setup
     - Sometimes deleting node_modules folder and reinstalling the dependencies again helps
 2. iOS

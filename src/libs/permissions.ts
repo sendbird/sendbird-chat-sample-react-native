@@ -1,4 +1,4 @@
-import {PERMISSIONS, Permission, requestMultiple, requestNotifications} from 'react-native-permissions';
+import {Permission, PERMISSIONS, requestMultiple, requestNotifications} from 'react-native-permissions';
 import {Platform} from 'react-native';
 import {logger} from './logger';
 

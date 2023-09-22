@@ -1,6 +1,5 @@
-import {Route, StackActions, createNavigationContainerRef, useNavigation, useRoute} from '@react-navigation/native';
+import {createNavigationContainerRef, Route, StackActions, useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootContextData} from '../contexts/RootContext';
 
 type ExtractParams<R extends Routes, U extends RouteParamsUnion> = U extends {
   route: R;
