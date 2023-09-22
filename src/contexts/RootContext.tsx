@@ -1,9 +1,11 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
+import React, {createContext, useContext, useState} from 'react';
 import SendbirdChat, {LogLevel, User} from '@sendbird/chat';
 import {AsyncStorageStatic} from '@react-native-async-storage/async-storage/lib/typescript/types';
 import {GroupChannelModule} from '@sendbird/chat/groupChannel';
 import {OpenChannelModule} from '@sendbird/chat/openChannel';
 import {ModuleNamespaces} from '@sendbird/chat/lib/__definition';
+import {logger} from '../libs/logger';
+import {initializeSDK, translateToSampleLogLevel} from '../libs/utils';
 
 interface Root {
   sdk: SendbirdChat & ModuleNamespaces<[GroupChannelModule, OpenChannelModule]>;
@@ -19,39 +21,25 @@ type Props = React.PropsWithChildren<{
 
 export const RootContext = createContext<Root | null>(null);
 
-export const RootContextProvider = ({
-  children,
-  appId,
-  logLevel,
-  localCacheStorage,
-}: Props) => {
-  const initSDK = () => {
-    return SendbirdChat.init({
-      appId,
-      logLevel,
-      modules: [new GroupChannelModule(), new OpenChannelModule()],
-      useAsyncStorageStore: localCacheStorage,
-      localCacheEnabled: Boolean(localCacheStorage),
-    });
-  };
-
-  const [sdk, setSdk] = useState(initSDK);
+export const RootContextProvider = ({children, appId, logLevel, localCacheStorage}: Props) => {
   const [user, setUser] = useState<Root['user']>(null);
+  const [sdk, setSDK] = useState(() => initializeSDK(appId, logLevel, localCacheStorage));
 
-  useEffect(() => {
-    if (sdk.appId !== appId) {
-      setSdk(initSDK);
-      setUser(null);
-    }
+  if (sdk.appId !== appId) {
+    logger.log('RootContext:', 'application id has been changed.');
+    sdk.disconnect();
+    setSDK(initializeSDK(appId, logLevel, localCacheStorage));
+    setUser(null);
+  }
 
-    if (logLevel) sdk.logLevel = logLevel;
-  }, [appId, logLevel]);
+  if (sdk.logLevel !== logLevel && logLevel) {
+    logger.log('RootContext:', 'log level has been changed.');
+    sdk.logLevel = logLevel;
+  }
 
-  return (
-    <RootContext.Provider value={{sdk, user, setUser}}>
-      {children}
-    </RootContext.Provider>
-  );
+  logger.setLogLevel(translateToSampleLogLevel(sdk.logLevel));
+
+  return <RootContext.Provider value={{sdk, user, setUser}}>{children}</RootContext.Provider>;
 };
 
 export const useRootContext = () => {

@@ -2,22 +2,37 @@ import {useRootContext} from '../contexts/RootContext';
 import {Platform, ScrollView} from 'react-native';
 import {Button, Text, TextInput, useUIKitTheme} from '@sendbird/uikit-react-native-foundation';
 import React, {useState} from 'react';
+import {isCacheRestrictedError} from '../libs/utils';
+import {logger} from '../libs/logger';
 
 const ConnectScreen = () => {
   const {sdk, setUser} = useRootContext();
   const {colors} = useUIKitTheme();
 
+  const [isConnecting, setIsConnecting] = useState(false);
   const [state, setState] = useState({
-    id: Platform.OS + '_RN',
+    id: 'ReactNative-' + Platform.OS,
     accessToken: '',
   });
 
-  const signIn = async () => {
+  const onPressConnect = async () => {
+    logger.log('try connect');
     try {
+      setIsConnecting(true);
       const user = await sdk.connect(state.id);
       setUser(user);
     } catch (e) {
-      if (sdk.currentUser) setUser(sdk.currentUser);
+      if (sdk.isCacheEnabled && sdk.currentUser) {
+        if (isCacheRestrictedError(e)) {
+          logger.log('connect failure and getting cache restricted error, clear cache');
+          sdk.clearCachedData();
+        } else {
+          logger.log('connect failure, connect with offline mode');
+          setUser(sdk.currentUser);
+        }
+      }
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -41,7 +56,9 @@ const ConnectScreen = () => {
         onChangeText={accessToken => setState(prev => ({...prev, accessToken}))}
         style={{marginBottom: 12}}
       />
-      <Button onPress={signIn}>{'Connect'}</Button>
+      <Button onPress={onPressConnect} disabled={isConnecting}>
+        {isConnecting ? 'Connecting...' : 'Connect'}
+      </Button>
     </ScrollView>
   );
 };

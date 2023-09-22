@@ -1,18 +1,15 @@
 import {AdminMessage} from '@sendbird/chat/message';
-import {View} from 'react-native';
-import {Text} from '@sendbird/uikit-react-native-foundation';
+import {GroupChannelMessage} from '@sendbird/uikit-react-native-foundation';
 import React from 'react';
+import {GroupChannel} from '@sendbird/chat/groupChannel';
 
 type Props = {
+  channel: GroupChannel;
   message: AdminMessage;
 };
 
-const AdminMessageView = ({message}: Props) => {
-  return (
-    <View style={{maxWidth: 200, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 12}}>
-      <Text caption4>{message.message}</Text>
-    </View>
-  );
+const AdminMessageView = ({message, channel}: Props) => {
+  return <GroupChannelMessage.Admin channel={channel} message={message} groupedWithPrev={false} groupedWithNext={false} />;
 };
 
 export default AdminMessageView;
