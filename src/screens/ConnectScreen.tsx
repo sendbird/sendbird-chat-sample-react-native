@@ -49,19 +49,34 @@ const ConnectScreen = () => {
       postConnect.push(sdk.updateCurrentUserInfo({nickname}).then(setUser));
       postConnect.push(
         permissionHandler.requestPermissions().then(async ({notification}) => {
-          if (!notification) return;
-          if (Platform.OS === 'android') {
-            const token = await messaging().getToken();
-            if (token) {
-              await sdk.registerFCMPushTokenForCurrentUser(token);
-              logger.log('fcm token registered', token);
+          if (notification) {
+            if (Platform.OS === 'android') {
+              const token = await messaging()
+                .getToken()
+                .catch(err => {
+                  logger.error('messaging().getToken() failed', err);
+                  return null;
+                });
+              if (token) {
+                await sdk.registerFCMPushTokenForCurrentUser(token);
+                logger.log('fcm token registered', token);
+              } else {
+                logger.warn('Cannot get fcm token, please check your `android/app/google-services.json`');
+              }
             }
-          }
-          if (Platform.OS === 'ios') {
-            const token = await messaging().getAPNSToken();
-            if (token) {
-              await sdk.registerAPNSPushTokenForCurrentUser(token);
-              logger.log('apns token registered', token);
+            if (Platform.OS === 'ios') {
+              const token = await messaging()
+                .getAPNSToken()
+                .catch(err => {
+                  logger.error('messaging().getAPNSToken() failed', err);
+                  return null;
+                });
+              if (token) {
+                await sdk.registerAPNSPushTokenForCurrentUser(token);
+                logger.log('apns token registered', token);
+              } else {
+                logger.warn('Cannot get apns token, please check your `ios/GoogleService-Info.plist`');
+              }
             }
           }
         }),
