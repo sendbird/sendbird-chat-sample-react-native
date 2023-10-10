@@ -51,7 +51,6 @@ const SendInput = ({channel}: {channel: GroupChannel}) => {
 
   const onPressSend = () => {
     setText(() => '');
-    channel.endTyping();
 
     channel
       .sendUserMessage({message: text})
@@ -125,7 +124,7 @@ const TypingIndicator = ({channel}: {channel: GroupChannel}) => {
   return (
     <View style={styles.typingIndicator}>
       <Text numberOfLines={1} ellipsizeMode={'middle'} style={{color: colors.onBackground03}}>
-        {`${typingUsers} typing...`}
+        {`${typingUsers.length} users typing...`}
       </Text>
     </View>
   );

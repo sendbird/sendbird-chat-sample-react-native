@@ -1,9 +1,8 @@
 import {BaseMessage} from '@sendbird/chat/message';
 import {Icon, LoadingSpinner, Text, useUIKitTheme} from '@sendbird/uikit-react-native-foundation';
 import {GroupChannel, GroupChannelHandler} from '@sendbird/chat/groupChannel';
-import React, {useEffect, useId} from 'react';
+import React, {useEffect, useId, useState} from 'react';
 import {useRootContext} from '../contexts/RootContext';
-import {useForceUpdate} from '@sendbird/uikit-utils';
 import {StyleSheet, View} from 'react-native';
 
 type Props = {
@@ -14,14 +13,15 @@ type Props = {
 const SendingStatus = ({channel, message}: Props) => {
   const {colors} = useUIKitTheme();
   const {sdk} = useRootContext();
-  const rerender = useForceUpdate();
   const handlerId = useId();
+
+  const [unreadMemberCount, setUnreadMemberCount] = useState(() => channel.getUnreadMemberCount(message));
 
   useEffect(() => {
     const handler = new GroupChannelHandler({
       onUnreadMemberStatusUpdated: eventChannel => {
-        if (eventChannel.url === channel.url) {
-          rerender();
+        if (eventChannel.url === channel.url && unreadMemberCount !== 0) {
+          setUnreadMemberCount(channel.getUnreadMemberCount(message));
         }
       },
     });
@@ -30,13 +30,13 @@ const SendingStatus = ({channel, message}: Props) => {
     return () => {
       sdk.groupChannel.removeGroupChannelHandler(handlerId);
     };
-  }, []);
+  }, [unreadMemberCount]);
 
   const withUnreadCount = (element: React.JSX.Element) => {
     return (
       <View style={styles.unreadCountContainer}>
         {element}
-        <Text style={[styles.unreadCount, {color: colors.onBackground03}]}>{`(${channel.getUnreadMemberCount(message)})`}</Text>
+        <Text style={[styles.unreadCount, {color: colors.onBackground03}]}>{`(${unreadMemberCount})`}</Text>
       </View>
     );
   };

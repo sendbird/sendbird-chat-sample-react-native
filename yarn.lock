@@ -1834,10 +1834,10 @@
   dependencies:
     nanoid "^3.1.23"
 
-"@sendbird/chat@^4.9.11":
-  version "4.9.11"
-  resolved "https://registry.yarnpkg.com/@sendbird/chat/-/chat-4.9.11.tgz#b2bf044b90a8318222ad2c9ae733872a7689a8e3"
-  integrity sha512-dxnq41cglkosiKuwGxJdhNAn7/FCRfHh4b9yWBxSQbeBEhp/3K6GBh8wIskndIlUyaCDKhUtS/b3Qz1c7Kjgnw==
+"@sendbird/chat@^4.9.14":
+  version "4.9.14"
+  resolved "https://registry.yarnpkg.com/@sendbird/chat/-/chat-4.9.14.tgz#bf6b7b322c4a757b86f56e06646eed680c713bf7"
+  integrity sha512-EBYmO6R0GJuj3eLjVLFQ3s+4I6rqIBSp42KxcCUmGGmU+TICIvzewwvlJk0v2dL56Pfx4NJskU6jaF5D1lLSpw==
 
 "@sendbird/uikit-react-native-foundation@^3.1.1":
   version "3.1.1"
