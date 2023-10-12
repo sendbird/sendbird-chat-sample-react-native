@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "Please put your google-services.json",
+    "project_id": "Please put your google-services.json",
+    "storage_bucket": "Please put your google-services.json"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "Please put your google-services.json",
+        "android_client_info": {
+          "package_name": "com.sendbird.chat.sample.reactnative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "Please put your google-services.json"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

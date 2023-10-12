@@ -1,88 +1,96 @@
-import {FlatList, Pressable, StyleSheet, TouchableOpacity, View} from 'react-native';
-import React, {useState} from 'react';
-import {useAsyncEffect, useFreshCallback} from '@sendbird/uikit-utils';
+import {FlatList, TouchableOpacity} from 'react-native';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {useRootContext} from '../contexts/RootContext';
-import {Avatar, Icon, Text} from '@sendbird/uikit-react-native-foundation';
-import {useNavigation} from '@react-navigation/native';
+import {Text, useAlert} from '@sendbird/uikit-react-native-foundation';
 import {User} from '@sendbird/chat';
+import {Routes, useAppNavigation} from '../libs/navigation';
+import {logger} from '../libs/logger';
+import UserCell from '../components/UserCell';
 
 const GroupChannelCreateScreen = () => {
   const {sdk} = useRootContext();
-
-  const navigation = useNavigation();
   const [query] = useState(() => sdk.createApplicationUserListQuery());
-
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  useHeaderButtons(selectedUsers);
 
-  const onCreateChannel = useFreshCallback(async () => {
-    if (selectedUsers.length > 0) {
-      const channel = await sdk.groupChannel.createChannel({
-        invitedUserIds: selectedUsers.map(u => u.userId),
-        operatorUserIds: [sdk.currentUser.userId],
-      });
-      // @ts-ignore
-      navigation.replace('GroupChannel', {channel});
+  useEffect(() => {
+    const initialFetch = async () => {
+      if (query.hasNext) {
+        const initialUsers = await query.next();
+        setUsers(initialUsers);
+      }
+    };
+
+    initialFetch();
+  }, []);
+
+  const keyExtractor = (item: User) => item.userId;
+  const onPressUserCell = (user: User) => {
+    setSelectedUsers(([...draft]) => {
+      const index = draft.indexOf(user);
+      if (index > -1) {
+        draft.splice(index, 1);
+      } else {
+        draft.push(user);
+      }
+      return draft;
+    });
+  };
+  const renderItem = ({item}: {item: User}) => {
+    return (
+      <UserCell
+        onPress={onPressUserCell}
+        user={item}
+        selected={selectedUsers.indexOf(item) > -1}
+        me={item.userId === sdk.currentUser?.userId}
+      />
+    );
+  };
+  const onLoadMoreUsers = async () => {
+    if (query.hasNext) {
+      const fetchedUsers = await query.next();
+      setUsers(prev => [...prev, ...fetchedUsers]);
     }
-  });
+  };
 
-  useAsyncEffect(() => {
+  return <FlatList data={users} keyExtractor={keyExtractor} renderItem={renderItem} onEndReached={onLoadMoreUsers} />;
+};
+
+const useHeaderButtons = (selectedUsers: User[]) => {
+  const {sdk} = useRootContext();
+  const {navigation} = useAppNavigation();
+  const {alert} = useAlert();
+
+  useLayoutEffect(() => {
+    const onPressCreateChannel = async () => {
+      logger.log('GroupChannelCreateScreen:', `create channel with ${selectedUsers.length} users`);
+
+      if (selectedUsers.length > 0) {
+        const channel = await sdk.groupChannel.createChannel({
+          invitedUserIds: selectedUsers.map(it => it.userId),
+          operatorUserIds: [sdk.currentUser!.userId],
+        });
+
+        navigation.replace(Routes.GroupChannel, {channelUrl: channel.url});
+      } else {
+        alert({
+          title: 'No users selected',
+          message: 'Please select at least one user to create a channel.',
+        });
+      }
+    };
+
     navigation.setOptions({
       headerRight: () => {
         return (
-          <TouchableOpacity onPress={onCreateChannel}>
+          <TouchableOpacity onPress={onPressCreateChannel}>
             <Text button>{'Create'}</Text>
           </TouchableOpacity>
         );
       },
     });
-
-    if (query.hasNext) query.next().then(setUsers);
-  }, []);
-
-  return (
-    <FlatList
-      data={users}
-      keyExtractor={item => item.userId}
-      renderItem={({item}) => {
-        const itemIdx = selectedUsers.indexOf(item);
-        const isMe = item.userId === sdk.currentUser.userId;
-        return (
-          <Pressable
-            disabled={isMe}
-            onPress={() => {
-              if (itemIdx > -1) {
-                setSelectedUsers(([...draft]) => {
-                  draft.splice(itemIdx, 1);
-                  return draft;
-                });
-              } else {
-                setSelectedUsers(prev => [...prev, item]);
-              }
-            }}
-            style={{flexDirection: 'row', alignItems: 'center', padding: 8}}>
-            <View style={{marginRight: 12}}>
-              <Avatar uri={item.profileUrl} />
-              {(itemIdx > -1 || isMe) && (
-                <Icon
-                  icon={'done'}
-                  color={'white'}
-                  containerStyle={[StyleSheet.absoluteFill, {borderRadius: 99, backgroundColor: 'rgba(0,0,0,0.7)'}]}
-                />
-              )}
-            </View>
-            <View>
-              <Text body2 numberOfLines={1} style={{marginBottom: 4}}>{`Nickname: ${item.nickname || '(No name)'}`}</Text>
-              <Text caption2 numberOfLines={1}>{`User ID: ${item.userId}`}</Text>
-            </View>
-          </Pressable>
-        );
-      }}
-      onEndReached={() => {
-        if (query.hasNext) query.next().then(u => setUsers(prev => [...prev, ...u]));
-      }}
-    />
-  );
+  }, [selectedUsers.length]);
 };
 
 export default GroupChannelCreateScreen;

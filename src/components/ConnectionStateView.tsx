@@ -2,56 +2,56 @@ import {useRootContext} from '../contexts/RootContext';
 import {Text, useUIKitTheme} from '@sendbird/uikit-react-native-foundation';
 import {useForceUpdate} from '@sendbird/uikit-utils';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import React, {useEffect} from 'react';
+import React, {useEffect, useId} from 'react';
 import {ConnectionHandler} from '@sendbird/chat';
-import {AppState, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
+import {logger} from '../libs/logger';
 
 export const CONNECTION_STATE_HEIGHT = 24;
 
 const ConnectionStateView = () => {
   const {sdk} = useRootContext();
-
   const {colors} = useUIKitTheme();
-  const forceUpdate = useForceUpdate();
   const {top} = useSafeAreaInsets();
 
-  useEffect(() => {
-    const KEY = 'root';
-    const handler = new ConnectionHandler();
-    handler.onConnected = () => forceUpdate();
-    handler.onDisconnected = () => forceUpdate();
-    handler.onReconnectFailed = () => forceUpdate();
-    handler.onReconnectStarted = () => forceUpdate();
-    handler.onReconnectSucceeded = () => forceUpdate();
-    sdk.addConnectionHandler(KEY, handler);
-    return () => sdk.removeConnectionHandler(KEY);
-  }, [sdk]);
+  const rerender = useForceUpdate();
+  const handlerId = useId();
 
   useEffect(() => {
-    const subscribe = AppState.addEventListener('change', state => {
-      if (sdk.currentUser) {
-        if (state === 'active') sdk.setForegroundState();
-        if (state === 'background') sdk.setBackgroundState();
-      }
+    const logAndUpdate = (type: string) => {
+      logger.info('ConnectionStateView:', type);
+      rerender();
+    };
+
+    const handler = new ConnectionHandler({
+      onConnected: () => logAndUpdate('onConnected'),
+      onDisconnected: () => logAndUpdate('onDisconnected'),
+      onReconnectFailed: () => logAndUpdate('onReconnectFailed'),
+      onReconnectStarted: () => logAndUpdate('onReconnectStarted'),
+      onReconnectSucceeded: () => logAndUpdate('onReconnectSucceeded'),
     });
 
-    return () => subscribe.remove();
+    sdk.addConnectionHandler(handlerId, handler);
+    return () => {
+      sdk.removeConnectionHandler(handlerId);
+    };
   }, [sdk]);
 
   return (
-    <View
-      style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: CONNECTION_STATE_HEIGHT + top,
-        paddingTop: top,
-        backgroundColor: colors.primary,
-        paddingHorizontal: 8,
-      }}>
+    <View style={[styles.container, {height: CONNECTION_STATE_HEIGHT + top, paddingTop: top, backgroundColor: colors.primary}]}>
       <Text caption3 color={colors.onBackgroundReverse01}>
         {`Connection state: ${sdk.connectionState}`}
       </Text>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+});
+
 export default ConnectionStateView;
