@@ -28,30 +28,47 @@ const GroupChannelScreen = () => {
       const channel = await sdk.groupChannel.getChannel(channelUrl);
       const collection = channel.createMessageCollection();
 
-      // Because the collection has a list of messages, just re-render without any additional processing.
+      // Because the collection managing the message list, it supports events related to messages in that channel.
+      // Therefore, you don't need to use GroupChannelHandler for message events.
+      // You can determine why a specific event occurred through `context.source`.
       collection.setMessageCollectionHandler({
         onChannelDeleted: () => {
+          // Notifies when the channel has been deleted.
           logger.info('channel deleted, go back');
           navigation.goBack();
         },
         onChannelUpdated: (_, channel) => {
+          // Notifies when the channel has been updated.
           setState(prev => (prev ? {...prev, channel} : prev));
         },
-        onMessagesUpdated: () => {
+        onMessagesUpdated: (context, channel, messages) => {
+          // Notifies when a message, including updates to messages you sent, has been updated.
+
+          // Because the collection has a list of messages, just re-render without any additional processing.
           rerender();
         },
-        onMessagesAdded: context => {
+        onMessagesAdded: (context, channel, messages) => {
+          // Notifies when a new message has been added.
+
+          // Because the collection has a list of messages, just re-render without any additional processing.
           rerender();
 
+          // You can additionally call `markAsRead()` here.
           if ([CollectionEventSource.SYNC_MESSAGE_FILL, CollectionEventSource.EVENT_MESSAGE_RECEIVED].includes(context.source)) {
             channel.markAsRead();
           }
         },
-        onMessagesDeleted: () => {
+        onMessagesDeleted: (context, channel, messageIds_deprecated, messages) => {
+          // Notifies when a message has been deleted. (messageIds is deprecated, please use messages)
+
+          // Because the collection has a list of messages, just re-render without any additional processing.
           rerender();
         },
         onHugeGapDetected: () => {
-          // reset
+          // https://docs.sendbird.com/docs/chat/sdk/v4/javascript/local-caching/using-message-collection/message-collection#2-gap-3-huge-gap
+          // This informs you when there is a significant difference between the cached message list of a channel and the actual message list.
+
+          // It is recommended to create a new collection instance.
           initializeCollection(channelUrl);
         },
       });
@@ -90,6 +107,8 @@ const GroupChannelScreen = () => {
   }, [params?.channelUrl]);
 
   // Handle dispose
+  //   Just as you remove event listeners when the component is unmounted,
+  //   You should call `collection.dispose` to stop the collection from performing background-related actions and event listening.
   useEffect(() => {
     return () => {
       state?.collection.dispose();
