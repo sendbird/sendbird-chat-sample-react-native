@@ -1,4 +1,4 @@
-package com.chatapp;
+package com.sendbird.chat.sample.reactnative;
 
 import android.app.Application;
 import com.facebook.react.PackageList;
