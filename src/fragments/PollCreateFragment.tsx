@@ -16,7 +16,7 @@ import {
 } from '@sendbird/uikit-react-native-foundation';
 import { useSendbirdChat } from '@sendbird/uikit-react-native';
 import { useGroupChannel } from '@sendbird/uikit-chat-hooks';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DatePicker from '@react-native-community/datetimepicker';
 import {PollCreateParams} from '@sendbird/chat/poll';
 
 export interface PollChoice {
@@ -48,7 +48,7 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
   const [closingTime, setClosingTime] = useState<Date | null>(null);
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
   const [allowUserSuggestion, setAllowUserSuggestion] = useState(false);
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerMode, setDatePickerMode] = useState<'date' | 'time'>('date');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -197,18 +197,29 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
     ));
   }, [choices]);
 
-  const showDatePicker = (mode: 'date' | 'time' = 'date') => {
+  const openDatePicker = (mode: 'date' | 'time' = 'date') => {
     setDatePickerMode(mode);
-    setDatePickerVisibility(true);
+    setShowDatePicker(true);
   };
 
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
-  };
-
-  const handleConfirmDateTime = (date: Date) => {
-    setClosingTime(date);
-    hideDatePicker();
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate && event.type === 'set') {
+      if (datePickerMode === 'date') {
+        // Keep existing time, update date
+        const newDate = new Date(closingTime || new Date());
+        newDate.setFullYear(selectedDate.getFullYear());
+        newDate.setMonth(selectedDate.getMonth());
+        newDate.setDate(selectedDate.getDate());
+        setClosingTime(newDate);
+      } else {
+        // Keep existing date, update time
+        const newDate = new Date(closingTime || new Date());
+        newDate.setHours(selectedDate.getHours());
+        newDate.setMinutes(selectedDate.getMinutes());
+        setClosingTime(newDate);
+      }
+    }
   };
 
   const handleSend = async () => {
@@ -344,7 +355,7 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
           <View style={styles.dateTimeContainer}>
             <TouchableOpacity
               style={[styles.dateTimeButton, { marginRight: 4 }]}
-              onPress={() => showDatePicker('date')}
+              onPress={() => openDatePicker('date')}
               disabled={isLoading || !closingTime}
             >
               <Text style={styles.dateTimeText}>
@@ -356,7 +367,7 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.dateTimeButton, { marginLeft: 4, marginRight: 8 }]}
-              onPress={() => showDatePicker('time')}
+              onPress={() => openDatePicker('time')}
               disabled={isLoading || !closingTime}
             >
               <Text style={styles.dateTimeText}>
@@ -412,14 +423,15 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
         </View>
       </ScrollView>
 
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode={datePickerMode}
-        onConfirm={handleConfirmDateTime}
-        onCancel={hideDatePicker}
-        date={closingTime || new Date()}
-        minimumDate={new Date()}
-      />
+      {showDatePicker && (
+        <DatePicker
+          value={closingTime || new Date()}
+          mode={datePickerMode}
+          display="spinner"
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </View>
   );
 };

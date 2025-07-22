@@ -62,7 +62,7 @@ export default function App() {
 
   return (
     <SendbirdUIKitContainer
-      appId={'A41EC43B-87A9-40CF-92C5-E178DD0477B1'} // Replace with your Sendbird application ID
+      appId={'FEA2129A-EA73-4EB9-9E0B-EC738E7EB768'} // Replace with your Sendbird application ID
       chatOptions={{
         localCacheStorage: mmkv,
         enableAutoPushTokenRegistration: false,
