@@ -14,6 +14,7 @@ import {
   GroupChannelListScreen,
   GroupChannelScreen,
   SignInScreen,
+  PollCreateScreen,
 } from './screens';
 import {Logger} from '@sendbird/uikit-utils';
 import {LogLevel} from '@sendbird/chat';
@@ -45,6 +46,10 @@ const Navigation = () => {
               name={'GroupChannel'}
               component={GroupChannelScreen}
             />
+            <RootStack.Screen
+              name={'PollCreate'}
+              component={PollCreateScreen}
+            />
           </>
         )}
       </RootStack.Navigator>
@@ -54,6 +59,7 @@ const Navigation = () => {
 
 export default function App() {
   Logger.setLogLevel('debug'); // Set log level to DEBUG for detailed logs
+
   return (
     <SendbirdUIKitContainer
       appId={'A41EC43B-87A9-40CF-92C5-E178DD0477B1'} // Replace with your Sendbird application ID

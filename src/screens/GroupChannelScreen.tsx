@@ -5,9 +5,8 @@ import {
   createGroupChannelFragment,
 } from '@sendbird/uikit-react-native';
 import { useGroupChannel } from '@sendbird/uikit-chat-hooks';
-import {Logger} from "@sendbird/uikit-utils";
-
-const GroupChannelFragment = createGroupChannelFragment();
+import { Logger } from "@sendbird/uikit-utils";
+import { CustomChannelInput } from '../components';
 
 const GroupChannelScreen = () => {
   const navigation = useNavigation<any>();
@@ -17,6 +16,11 @@ const GroupChannelScreen = () => {
   const { sdk } = useSendbirdChat();
   const { channel } = useGroupChannel(sdk, params.channelUrl);
   if (!channel) return null;
+
+  // Create GroupChannelFragment with custom Input
+  const GroupChannelFragment = createGroupChannelFragment({
+    Input: CustomChannelInput,
+  });
 
   return (
     <GroupChannelFragment
