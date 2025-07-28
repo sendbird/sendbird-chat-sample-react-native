@@ -14,10 +14,11 @@ import {
   GroupChannelListScreen,
   GroupChannelScreen,
   SignInScreen,
-  PollCreateScreen,
+  PollCreateScreen, PollResultScreen,
 } from './screens';
 import {Logger} from '@sendbird/uikit-utils';
 import {LogLevel} from '@sendbird/chat';
+import VoteScreen from './screens/VoteScreen.tsx';
 
 const mmkv = new MMKV();
 
@@ -49,6 +50,14 @@ const Navigation = () => {
             <RootStack.Screen
               name={'PollCreate'}
               component={PollCreateScreen}
+            />
+            <RootStack.Screen
+              name={'Vote'}
+              component={VoteScreen}
+            />
+            <RootStack.Screen
+              name={'PollResult'}
+              component={PollResultScreen}
             />
           </>
         )}
