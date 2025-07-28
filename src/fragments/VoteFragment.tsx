@@ -25,7 +25,7 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
   channelUrl,
   onVoteSubmitted,
 }) => {
-  const { votePoll } = usePoll(channelUrl);
+  const { votePoll, addPollOption } = usePoll(channelUrl);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [newOptionText, setNewOptionText] = useState('');
   const [showAddOption, setShowAddOption] = useState(false);
@@ -35,8 +35,8 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
 
   const handleOptionSelect = useCallback((optionId: number) => {
     if (isMultiSelect) {
-      setSelectedOptions(prev => 
-        prev.includes(optionId) 
+      setSelectedOptions(prev =>
+        prev.includes(optionId)
           ? prev.filter(id => id !== optionId)
           : [...prev, optionId]
       );
@@ -47,7 +47,7 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
 
   const handleSubmitVote = useCallback(async () => {
     if (selectedOptions.length === 0) return;
-    
+
     try {
       await votePoll(poll.id, selectedOptions);
       onVoteSubmitted?.();
@@ -56,13 +56,17 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
     }
   }, [selectedOptions, poll.id, votePoll, onVoteSubmitted]);
 
-  const handleAddOption = useCallback(() => {
+  const handleAddOption = useCallback(async () => {
     if (newOptionText.trim()) {
-      // TODO: Implement add option functionality
-      setNewOptionText('');
-      setShowAddOption(false);
+      try {
+        await addPollOption(poll.id, newOptionText.trim());
+        setNewOptionText('');
+        setShowAddOption(false);
+      } catch (error) {
+        console.error('Error adding poll option:', error);
+      }
     }
-  }, [newOptionText]);
+  }, [newOptionText, addPollOption, poll.id]);
 
   const renderCheckbox = (isSelected: boolean) => (
     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -71,14 +75,14 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
         {/* Poll Title */}
         <Text style={styles.pollTitle}>{poll.title || pollMessage.message}</Text>
-        
+
         {/* Meta Info */}
         <Text style={styles.metaText}>
           {isMultiSelect ? 'Multi select' : 'Single select'} | {new Date(pollMessage.createdAt).toLocaleDateString('ko-KR')}
@@ -108,7 +112,7 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
                       style={styles.addOptionInput}
                       value={newOptionText}
                       onChangeText={setNewOptionText}
-                      placeholder="단답 제안"
+                      placeholder="Enter option text"
                       autoFocus
                     />
                     <TouchableOpacity onPress={handleAddOption} style={styles.addOptionButton}>

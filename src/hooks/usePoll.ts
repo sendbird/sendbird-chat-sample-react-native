@@ -8,6 +8,7 @@ export interface UsePollResult {
   closePoll: (pollId: number) => Promise<void>;
   deletePoll: (pollId: number) => Promise<void>;
   updatePoll: (pollId: number, title?: string, data?: string) => Promise<void>;
+  addPollOption: (pollId: number, optionText: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -71,11 +72,25 @@ export const usePoll = (channelUrl?: string): UsePollResult => {
     }
   }, [channel]);
 
+  const addPollOption = useCallback(async (pollId: number, optionText: string) => {
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+    
+    try {
+      await channel.addPollOption(pollId, optionText);
+    } catch (error) {
+      console.error('Error adding poll option:', error);
+      throw error;
+    }
+  }, [channel]);
+
   return {
     votePoll,
     closePoll,
     deletePoll,
     updatePoll,
+    addPollOption,
     loading: false, // TODO: Add loading state management
   };
 };
