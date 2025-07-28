@@ -30,12 +30,14 @@ const GroupChannelScreen = () => {
               navigation.navigate('Vote', {
                 pollMessage: message,
                 poll: poll,
+                channelUrl: params.channelUrl,
               });
             }}
             onViewResults={() => {
               navigation.navigate('PollResult', {
                 pollMessage: message,
                 poll: poll,
+                channelUrl: params.channelUrl,
               });
             }}
             onClosePress={() => {
