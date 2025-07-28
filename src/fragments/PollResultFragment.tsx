@@ -1,10 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Poll, PollOption, PollVoterListQuery} from '@sendbird/chat/poll';
+import {Poll, PollOption} from '@sendbird/chat/poll';
 import {SendbirdMessage} from '@sendbird/uikit-utils';
 import {User} from '@sendbird/chat';
-import {useSendbirdChat} from '@sendbird/uikit-react-native';
-import {useGroupChannel} from '@sendbird/uikit-chat-hooks';
+import { usePollVoters } from '../hooks/usePollVoters';
 
 interface PollResultFragmentProps {
   pollMessage: SendbirdMessage;
@@ -17,39 +16,10 @@ export const PollResultFragment: React.FC<PollResultFragmentProps> = ({
   poll,
   channelUrl,
 }) => {
-  const { sdk } = useSendbirdChat();
-  const { channel } = useGroupChannel(sdk, channelUrl || '');
-  const [votersData, setVotersData] = useState<Record<number, User[]>>({});
-  const [loading, setLoading] = useState(false);
+  const { votersData, loading, error, getVotersForOption } = usePollVoters(poll, channelUrl);
 
   const isMultiSelect = poll.allowMultipleVotes;
   const totalVotes = poll.voterCount;
-
-  console.log('votersData:', votersData);
-  // Fetch voters for each poll option
-  useEffect(() => {
-    const fetchVoters = async () => {
-      if (!channel) return;
-
-      setLoading(true);
-      const newVotersData: Record<number, User[]> = {};
-
-      try {
-        for (const option of poll.options) {
-          const query: PollVoterListQuery = channel.createPollVoterListQuery(poll.id, option.id);
-          newVotersData[option.id] = await query.next();
-          console.log('votersData query next:', newVotersData[option.id]);
-        }
-        setVotersData(newVotersData);
-      } catch (error) {
-        console.error('Error fetching poll voters:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchVoters();
-  }, [channel, poll.id, poll.options]);
 
   const renderVoterAvatar = (voter: User) => (
     <View key={voter.userId} style={styles.voterItem}>
@@ -67,7 +37,7 @@ export const PollResultFragment: React.FC<PollResultFragmentProps> = ({
   const renderPollOption = (option: PollOption, index: number) => {
     const voteCount = option.voteCount || 0;
     const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-    const voters = votersData[option.id] || [];
+    const voters = getVotersForOption(option.id);
 
     return (
       <View key={option.id} style={styles.optionContainer}>
@@ -88,6 +58,22 @@ export const PollResultFragment: React.FC<PollResultFragmentProps> = ({
       </View>
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading poll results...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Error loading poll results: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -198,5 +184,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 50,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff4444',
+    textAlign: 'center',
+    marginTop: 50,
+    marginHorizontal: 16,
   },
 });

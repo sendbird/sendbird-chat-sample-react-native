@@ -26,6 +26,7 @@ const GroupChannelScreen = () => {
           <PollMessage
             message={message}
             poll={poll}
+            channelUrl={params.channelUrl}
             onVote={() => {
               navigation.navigate('Vote', {
                 pollMessage: message,
@@ -40,12 +41,7 @@ const GroupChannelScreen = () => {
                 channelUrl: params.channelUrl,
               });
             }}
-            onClosePress={() => {
-              // Handle close poll action
-              if (poll && channel) {
-                channel.closePoll(poll.id);
-              }
-            }}
+            showCloseButton={true}
           />
         );
       }

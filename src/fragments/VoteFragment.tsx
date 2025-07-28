@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { Poll, PollOption } from '@sendbird/chat/poll';
 import { SendbirdMessage } from '@sendbird/uikit-utils';
-import { useSendbirdChat } from '@sendbird/uikit-react-native';
-import { useGroupChannel } from '@sendbird/uikit-chat-hooks';
+import { usePoll } from '../hooks/usePoll';
 
 interface VoteFragmentProps {
   pollMessage: SendbirdMessage;
@@ -26,9 +25,7 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
   channelUrl,
   onVoteSubmitted,
 }) => {
-  const { sdk } = useSendbirdChat();
-  const { channel } = useGroupChannel(sdk, channelUrl || '');
-
+  const { votePoll } = usePoll(channelUrl);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [newOptionText, setNewOptionText] = useState('');
   const [showAddOption, setShowAddOption] = useState(false);
@@ -52,14 +49,12 @@ export const VoteFragment: React.FC<VoteFragmentProps> = ({
     if (selectedOptions.length === 0) return;
     
     try {
-      if (channel) {
-        await channel.votePoll(poll.id, selectedOptions);
-      }
+      await votePoll(poll.id, selectedOptions);
       onVoteSubmitted?.();
     } catch (error) {
       console.error('Error voting on poll:', error);
     }
-  }, [selectedOptions, poll.id, channel, onVoteSubmitted]);
+  }, [selectedOptions, poll.id, votePoll, onVoteSubmitted]);
 
   const handleAddOption = useCallback(() => {
     if (newOptionText.trim()) {

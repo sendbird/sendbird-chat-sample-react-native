@@ -3,22 +3,34 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SendbirdMessage } from '@sendbird/uikit-utils';
 import {Poll, PollStatus} from '@sendbird/chat/poll';
 import {useLocalization} from '@sendbird/uikit-react-native';
+import { usePoll } from '../../hooks/usePoll';
 
 interface PollMessageProps {
   message: SendbirdMessage;
   poll: Poll;
+  channelUrl?: string;
   onVote: () => void;
   onViewResults: () => void;
-  onClosePress?: () => void;
+  showCloseButton?: boolean;
 }
 
 export const PollMessage: React.FC<PollMessageProps> = ({
   message,
   poll,
+  channelUrl,
   onVote,
   onViewResults,
-  onClosePress,
+  showCloseButton = false,
 }) => {
+  const { closePoll } = usePoll(channelUrl);
+
+  const handleClosePress = async () => {
+    try {
+      await closePoll(poll.id);
+    } catch (error) {
+      console.error('Failed to close poll:', error);
+    }
+  };
   const isMultiSelect = poll.allowMultipleVotes;
   const isPollClosed = poll.status === PollStatus.CLOSED;
   const { STRINGS } = useLocalization();
@@ -95,8 +107,8 @@ export const PollMessage: React.FC<PollMessageProps> = ({
 
         {!isPollClosed && (
           <View style={styles.actionButtons}>
-            {onClosePress && (
-              <TouchableOpacity style={styles.actionButton} onPress={onClosePress}>
+            {showCloseButton && (
+              <TouchableOpacity style={styles.actionButton} onPress={handleClosePress}>
                 <Text style={styles.actionButtonText}>Close poll</Text>
               </TouchableOpacity>
             )}
