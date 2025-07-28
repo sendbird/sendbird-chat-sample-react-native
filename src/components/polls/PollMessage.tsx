@@ -19,10 +19,63 @@ export const PollMessage: React.FC<PollMessageProps> = ({
   onViewResults,
   onClosePress,
 }) => {
-  const totalVotes = poll.voterCount;
   const isMultiSelect = poll.allowMultipleVotes;
   const isPollClosed = poll.status === PollStatus.CLOSED;
   const { STRINGS } = useLocalization();
+
+  const totalVotes = poll.voterCount;
+
+  const renderPollOptions = () => {
+    if (isPollClosed) {
+      // Show results with vote counts and percentages
+      return poll?.options?.map((option: any, index: number) => {
+        const voteCount = option.voteCount || 0;
+        const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+
+        return (
+          <View key={option.id || index} style={styles.resultOptionItem}>
+            <View style={styles.optionHeader}>
+              <Text style={styles.optionText}>{option.text}</Text>
+              <Text style={styles.percentageText}>{percentage}%</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${percentage}%` }]} />
+            </View>
+            <Text style={styles.voteCountText}>{voteCount} votes</Text>
+          </View>
+        );
+      });
+    } else {
+      // Show simple options for voting
+      return poll?.options?.map((option: any, index: number) => (
+        <View key={option.id || index} style={styles.optionItem}>
+          <Text style={styles.optionText}>{option.text}</Text>
+        </View>
+      ));
+    }
+  };
+
+  const renderActionButton = () => {
+    if (isPollClosed) {
+      return (
+        <TouchableOpacity style={styles.viewMoreButton} onPress={onViewResults}>
+          <Text style={styles.viewMoreButtonText}>View more</Text>
+        </TouchableOpacity>
+      );
+    } else if (isMultiSelect) {
+      return (
+        <TouchableOpacity style={styles.voteAgainButton} onPress={onVote}>
+          <Text style={styles.voteAgainButtonText}>Vote again</Text>
+        </TouchableOpacity>
+      );
+    } else {
+      return (
+        <TouchableOpacity style={styles.voteButton} onPress={onVote}>
+          <Text style={styles.voteButtonText}>Vote now</Text>
+        </TouchableOpacity>
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -31,34 +84,27 @@ export const PollMessage: React.FC<PollMessageProps> = ({
 
         <View style={styles.metaInfo}>
           <Text style={styles.metaText}>
-            {isMultiSelect ? 'Multi select' : 'Single select'} | Created on {STRINGS.GROUP_CHANNEL.LIST_DATE_SEPARATOR(new Date(message.createdAt))}
+            {isMultiSelect ? 'Multi select' : 'Single select'} | Created on{' '}
+            {STRINGS.GROUP_CHANNEL.LIST_DATE_SEPARATOR(new Date(message.createdAt))}
           </Text>
         </View>
 
-        <View style={styles.optionsContainer}>
-          {poll?.options?.map((option: any, index: number) => (
-            <View key={option.id || index} style={styles.optionItem}>
-              <Text style={styles.optionText}>{option.text}</Text>
-            </View>
-          ))}
-        </View>
+        <View style={styles.optionsContainer}>{renderPollOptions()}</View>
+
+        {renderActionButton()}
 
         {!isPollClosed && (
-          <TouchableOpacity style={styles.voteButton} onPress={onVote}>
-            <Text style={styles.voteButtonText}>Vote now</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.actionButtons}>
-          {onClosePress && (
-            <TouchableOpacity style={styles.actionButton} onPress={onClosePress}>
-              <Text style={styles.actionButtonText}>Close poll</Text>
+          <View style={styles.actionButtons}>
+            {onClosePress && (
+              <TouchableOpacity style={styles.actionButton} onPress={onClosePress}>
+                <Text style={styles.actionButtonText}>Close poll</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.actionButton} onPress={onViewResults}>
+              <Text style={styles.actionButtonText}>View result</Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.actionButton} onPress={onViewResults}>
-            <Text style={styles.actionButtonText}>View result</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -100,9 +146,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  resultOptionItem: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  optionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   optionText: {
     fontSize: 14,
     color: '#333',
+    flex: 1,
+  },
+  percentageText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  progressBarContainer: {
+    height: 4,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#6C5CE7',
+    borderRadius: 2,
+  },
+  voteCountText: {
+    fontSize: 12,
+    color: '#666',
   },
   voteButton: {
     backgroundColor: '#6C5CE7',
@@ -113,6 +194,30 @@ const styles = StyleSheet.create({
   },
   voteButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  voteAgainButton: {
+    backgroundColor: '#6C5CE7',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  voteAgainButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  viewMoreButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  viewMoreButtonText: {
+    color: '#6C5CE7',
     fontSize: 16,
     fontWeight: '600',
   },
