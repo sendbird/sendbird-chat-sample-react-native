@@ -33,25 +33,40 @@ export const PollMessage: React.FC<PollMessageProps> = ({
   };
   const isMultiSelect = poll.allowMultipleVotes;
   const isPollClosed = poll.status === PollStatus.CLOSED;
+  const hasVoted = poll.votedPollOptionIds && poll.votedPollOptionIds.length > 0;
   const { STRINGS } = useLocalization();
 
   const totalVotes = poll.voterCount;
 
   const renderPollOptions = () => {
-    if (isPollClosed) {
+    if (isPollClosed || hasVoted) {
       // Show results with vote counts and percentages
       return poll?.options?.map((option: any, index: number) => {
         const voteCount = option.voteCount || 0;
         const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+        const isVotedOption = poll.votedPollOptionIds && poll.votedPollOptionIds.includes(option.id);
 
         return (
-          <View key={option.id || index} style={styles.resultOptionItem}>
+          <View key={option.id || index} style={[
+            styles.resultOptionItem,
+            isVotedOption && styles.votedOptionItem
+          ]}>
             <View style={styles.optionHeader}>
-              <Text style={styles.optionText}>{option.text}</Text>
+              <Text style={[
+                styles.optionText,
+                isVotedOption && styles.votedOptionText
+              ]}>
+                {option.text}
+                {isVotedOption && ' ✓'}
+              </Text>
               <Text style={styles.percentageText}>{percentage}%</Text>
             </View>
             <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, { width: `${percentage}%` }]} />
+              <View style={[
+                styles.progressBar,
+                { width: `${percentage}%` },
+                isVotedOption && styles.votedProgressBar
+              ]} />
             </View>
             <Text style={styles.voteCountText}>{voteCount} votes</Text>
           </View>
@@ -74,7 +89,8 @@ export const PollMessage: React.FC<PollMessageProps> = ({
           <Text style={styles.viewMoreButtonText}>View more</Text>
         </TouchableOpacity>
       );
-    } else if (isMultiSelect) {
+    } else if (hasVoted) {
+      // Show vote again button when user has voted
       return (
         <TouchableOpacity style={styles.voteAgainButton} onPress={onVote}>
           <Text style={styles.voteAgainButtonText}>Vote again</Text>
@@ -94,12 +110,14 @@ export const PollMessage: React.FC<PollMessageProps> = ({
       <View style={styles.pollContainer}>
         <Text style={styles.title}>{poll.title || message.message}</Text>
 
-        <View style={styles.metaInfo}>
-          <Text style={styles.metaText}>
-            {isMultiSelect ? 'Multi select' : 'Single select'} | Created on{' '}
-            {STRINGS.GROUP_CHANNEL.LIST_DATE_SEPARATOR(new Date(message.createdAt))}
-          </Text>
-        </View>
+        {!isPollClosed && !hasVoted && (
+          <View style={styles.metaInfo}>
+            <Text style={styles.metaText}>
+              {isMultiSelect ? 'Multi select' : 'Single select'} | Created on{' '}
+              {STRINGS.GROUP_CHANNEL.LIST_DATE_SEPARATOR(new Date(message.createdAt))}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.optionsContainer}>{renderPollOptions()}</View>
 
@@ -250,5 +268,16 @@ const styles = StyleSheet.create({
     color: '#6C5CE7',
     fontSize: 14,
     fontWeight: '500',
+  },
+  votedOptionItem: {
+    borderColor: '#6C5CE7',
+    borderWidth: 1,
+  },
+  votedOptionText: {
+    fontWeight: '600',
+    color: '#6C5CE7',
+  },
+  votedProgressBar: {
+    backgroundColor: '#5B4FD1',
   },
 });

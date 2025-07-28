@@ -30,9 +30,6 @@ const PollResultScreen = () => {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Poll Detail</Text>
-        <TouchableOpacity>
-          <Text style={styles.menuButton}>⋮</Text>
-        </TouchableOpacity>
       </View>
 
       <PollResultFragment
@@ -52,7 +49,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     backgroundColor: '#6C5CE7',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -66,11 +63,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-  },
-  menuButton: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '600',
+    marginLeft: 20,
   },
 });
 

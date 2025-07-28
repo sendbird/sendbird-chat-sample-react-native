@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     backgroundColor: '#6C5CE7',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+    marginLeft: 20,
   },
   placeholder: {
     width: 24,

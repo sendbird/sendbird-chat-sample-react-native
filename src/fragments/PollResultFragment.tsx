@@ -16,7 +16,7 @@ export const PollResultFragment: React.FC<PollResultFragmentProps> = ({
   poll,
   channelUrl,
 }) => {
-  const { votersData, loading, error, getVotersForOption } = usePollVoters(poll, channelUrl);
+  const { loading, error, getVotersForOption } = usePollVoters(poll, channelUrl);
 
   const isMultiSelect = poll.allowMultipleVotes;
   const totalVotes = poll.voterCount;
