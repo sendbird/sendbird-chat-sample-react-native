@@ -292,7 +292,7 @@ const PollCreateFragment: React.FC<PollCreateFragmentProps> = ({
               canSend ? styles.headerButton : styles.headerButtonDisabled,
               styles.sendButton
             ]}>
-              {isLoading ? 'Sending...' : 'Send'}
+              {isLoading ? 'Creating...' : 'Creat'}
             </Text>
           </TouchableOpacity>
         }

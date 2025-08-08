@@ -66,3 +66,4 @@ yarn-error.log
 /coverage
 /.yarn/cache/
 /.yarn/install-state.gz
+/CLAUDE.md
